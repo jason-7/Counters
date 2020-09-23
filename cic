@@ -1,0 +1,191 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 09/21/2020 07:29:22 PM
+-- Design Name: 
+-- Module Name: cic_tb - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+--use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use std.textio.all;
+use IEEE.std_logic_unsigned.all;
+
+
+entity cic_tb is
+ generic(CI_SIZE : integer := 18; -- cic input data width
+ CO_SIZE : integer := 30; -- cic output data width
+ STAGES : integer := 5);
+--  Port ( );
+end cic_tb;
+
+architecture Behavioral of cic_tb is
+
+component cic is
+ 
+ port (clk : in std_logic; -- system clock (80 Mhz)
+ 
+ ce : in std_logic; -- clock enable
+ ce_r : in std_logic; -- decimated clock by factor of 5 used in comb section
+ rst : in std_logic; -- system reset
+ d : in std_logic_vector (CI_SIZE-1 downto 0); -- input data
+ q : out std_logic_vector (CO_SIZE-1 downto 0)); -- output data
+end component cic;
+
+signal clk, ce, ce_r, rst: std_logic:='0';
+signal d: std_logic_vector (CI_SIZE-1 downto 0);--:=(others => '0');
+signal q: std_logic_vector (CO_SIZE-1 downto 0);
+constant cp: time:=12.5ns;
+constant cp2: time:=125ns;
+constant cp3: time:=1250ns;
+signal input: signed(17 downto 0);
+
+begin
+
+input <= signed(d);
+
+UUT: cic port map(clk => clk, ce => ce, ce_r => ce_r, rst => rst, d => d, q => q);
+
+--clock
+process
+    begin
+        clk <= '0';
+            wait for cp/2;
+        clk <= '1';
+            wait for cp/2;
+end process;
+
+--reset
+process
+    begin
+        rst <= '1';
+            wait for cp;
+        rst <= '0';
+            wait;
+end process;
+
+--clock enable
+process
+    begin
+        ce <= '1';
+            wait;
+end process;
+
+--decimated clock enable
+process
+    begin
+        ce_r<='0';
+            wait for cp/2;
+        ce_r<='1';
+            wait for cp/2;
+        ce_r<='0';
+            wait for cp*4;
+end process;
+      
+process(clk)
+file file_out: text is out"C:\Users\jason\Desktop\Jason\CSUN\School Semesters\Fall Semesters\Fall 2020\ECE 524\Lab\Lab 2\lab_2\fir_out.txt";
+variable line_out: line;
+variable output_tmp:std_logic_vector(29 downto 0);      
+    begin
+        if(rising_edge(clk)) then
+            output_tmp := q;
+            write(line_out, conv_integer(output_tmp));
+            writeline(file_out,line_out);
+        end if;     
+end process;
+
+process(clk)
+file file_out: text is out"C:\Users\jason\Desktop\Jason\CSUN\School Semesters\Fall Semesters\Fall 2020\ECE 524\Lab\Lab 2\lab_2\fir_in.txt";
+variable line_out: line;
+variable input_tmp:signed(17 downto 0);      
+    begin
+        if(rising_edge(clk)) then
+            input_tmp := input;
+            write(line_out,to_integer(input_tmp));
+            writeline(file_out,line_out);
+        end if;     
+end process;
+
+--8 MHz
+process
+    begin
+        wait for cp;
+        d <= std_logic_vector(to_signed(0,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(77041,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(124655,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(124655,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(77041,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(0,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(-77041,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(-124655,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(-124655,18));
+        wait for cp;
+        d <= std_logic_vector(to_signed(-77041,18));
+end process;
+
+----16 MHz
+--process
+--    begin
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(0,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(124655,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(77041,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(-77041,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(-124655,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(0,18));
+--end process;
+
+----24 MHz
+--process
+--    begin
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(0,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(124655,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(-77041,18));
+--        wait for cp;
+--        d <= std_logic_vector(to_signed(-77041,18));
+--end process;
+
+end Behavioral;
